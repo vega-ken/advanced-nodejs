@@ -1,0 +1,65 @@
+Section 1
+The Internals of Node
+
+2.Starting With Node Internals
+  este video presenta las dependencias principales de node : v8 y libuv
+  explica que se usa nodejs y no directamente v8 o libuv para que no tengas que estar codeando funciones en c++. ademas tiene apis
+3.Module Implementations
+  para entender mejor nodejs y su relacion con c++ se sigue este flujo. se ve una funcion en nodejs y se busca en el source code
+  las funciones que estan en el api de node en el fondo llaman a otras funciones que estan escritas en c++. estas se importan de otra manera
+  esas funciones hechas en c++ se traen a los archivos js a traves de process.binding
+4.Node Backed by C++!
+  explica que el proposito de v8 es traducir lo que js entiende como un False o Array (por ejm) a conceptos en c++
+  libuv se usa para acceder a los archivos del sistema y algunas cosas de concurrencia
+  node usa v8 que es un engine y la libreria c++ libuv 
+5.The Basics of Threads
+  este video habla de procesos y threads como introduccion al event loop que usa node
+  existe tambien una cosa llamada OS scheduler que es quien decide que thread debe ser procesado
+  menciona que para tratar varios threads a la vez (que son como todolists) puedes tener mas cpu cores (o tambien hacer multithreading)
+  tambien habla sobre las operaciones I/O que hacen que un thread se detenga. el os scheduler puede parar los threads para eficiencia
+6.The Node Event Loop
+  diagrama: cuando se ejecuta un programa en node (process) se tiene siempre un thread y un event loop
+  el event loop es quien decide que es lo que el thread del proceso node debe estar ejecutando en todo momento
+9.Is Node Single Threaded?
+  menciona que el event loop por sí solo es single threaded. pero node en su totalidad no es single threaded.
+10.Testing for Single Threads
+  aqui prueba que si pone 2 operaciones que toman 1 segundo una despues de otra. ambas terminan tomando el mismo tiempo en ejecutarse
+  dice que si node fuese todo single thread entonces el programa habria tardado el doble de tiempo en ejecutar ambas funciones
+11.The Libuv Thread Pool
+  aqui habla de que asi como node usa libuv para los modulos. tambien libuv decide que tareas pesadas se realicen en otros threads
+12.Threadpools with Multithreading
+  aqui realiza una tarea pesada 5 veces y nota que los tiempos de los primeros 4 se doblan pero terminan al mismo tiempo
+  sin embargo, el tiempo de la 5ta tarea toma el tiempo normal. Todo esto se da por como sus cores de su cpu manejan los 4 threads de libuv
+13.Changing Threadpool Size
+  el threadpool que decide cuantos threads usará el proceso node se puede cambiar a traves de process.env.UV_THREADPOOL_SIZE
+  el libuv threadpool entonces afecta como se manejan las operaciones que tardan un cierto tiempo (como hashear un password)
+14.Common Threadpool Questions
+  esta seccion responde a algunas preguntas comunes sobre el threadpool
+  se puede escribir js que afecte al thread pool. no solo las funciones de nodejs pueden maniobrarlo
+  dependiendo del OS que se use, algunas funciones de node pueden o no usar el threadpool. Pero siempre las funciones de 'fs' usan threadpool
+15.Explaining OS Operations
+  el anterior benchmarking que hizo fue de funciones de node pesadas (costosas) que se representan en su pseudocodigo como pendingOperations
+  ahora realizara otro benchmark que hace analogía con pendingOSTasks. en este caso toma la function http de la libreria estandar node
+16.Libuv OS Delegation
+  para tareas pesadas es importante saber sobre el threadpool. Sin embargo, cuando se trata de network requests se trata de manera distinta
+  cuando se trata de network requests, libuv termina delegando esos al OS de la maquina donde este el proceso node. así solo tiene que esperar
+  como el OS tiene la tarea de como hacer los network requests, tiene libertad de cuantos threads usar para manejar todos esos requests
+19.Crazy Node Behavior
+  aqui intenta hacer en un solo proceso de node : un network request, lectura del disco y 4 operaciones de hash. cada una printea en callback
+  se esperaria que primero resulte la lectura del archivo, luego el network request y luego recien los hashes. pero el resultado es otro
+  segun como se printea en consola, la lectura de un archivo tarda tanto como tarda el hash del password
+20.Unexpected Event Loop Events
+  el network request printea primero porque no tiene nada que ver con el thread pool. recuerda que libuv lo delega al OS. por eso es mas rapid
+  leer y hashear son operaciones pesadas. pero leer del disco tiene 2 fases. así que cuando termina la primera el thread que usaba queda libre
+  ese thread que queda libre puede ser ocupado por otra tarea pesada. y si el thread pool esta lleno por completo, la segunda fase (1/2)
+  la segunda fase de la lectura de disco no terminara hasta que quede de nuevo un thread libre del thread pool.(2/2)
+  por esa razon es que 'aparenta' que la lectura del disco tomo el mismo tiempo que los hashes. debido a como funciona el thread pool
+
+Section 2
+Enhancing Node Performance
+
+21.Enhancing Performance
+  cuando no se puede evitar que un proceso de node haga muchas tareas pesadas. se utilizan otros modos en node : cluster mode y worker threads
+  cluster mode en node es la manera recomendada de testear el perfomance de tu servidor en node. worker threads es aun experimental
+22.Express Setup
+  para testear se usa un servidor pequeño de express. no usar nodemon para actualizar porque no funciona bien con cluster mode
