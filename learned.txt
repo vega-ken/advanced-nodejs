@@ -22,6 +22,8 @@ The Internals of Node
   el event loop es quien decide que es lo que el thread del proceso node debe estar ejecutando en todo momento
 9.Is Node Single Threaded?
   menciona que el event loop por sí solo es single threaded. pero node en su totalidad no es single threaded.
+  el event loop como tal sí es single threaded, corre solo en un thread. pero este *puede* llamar funciones que se ejecuten fuera del event loop y estas sí son ejecutadas en otros threads.
+  node no solo consiste del event loop (que es single threaded), sino tambien de otras funciones que se ejecutan en threads separados
 10.Testing for Single Threads
   aqui prueba que si pone 2 operaciones que toman 1 segundo una despues de otra. ambas terminan tomando el mismo tiempo en ejecutarse
   dice que si node fuese todo single thread entonces el programa habria tardado el doble de tiempo en ejecutar ambas funciones
